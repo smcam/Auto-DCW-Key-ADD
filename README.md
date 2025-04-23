@@ -7,9 +7,16 @@ Add Auto DCW Key And ADD Manual BISS Key Plugin for Enigma2 by @Youchie
 
 Coded by @Youchie SmartCam Tem (c)2025
 
-Telegram ID: @Youchie
+.............................................................
 
-Telegram Channel: Smartcam_1
+🔗 Contact me:
+
+.............................................................
+
+
+📢 Telegram ID: [@Youchie](https://t.me/Youchie)
+
+📢 Telegram Channel: [Smartcam_1](https://t.me/Smartcam_1)
 
 github: https://github.com/smcam
 
