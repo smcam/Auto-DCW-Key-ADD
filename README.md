@@ -89,4 +89,4 @@ Go to the channel where the CW is frozen.
 
 📢 Telegram ID: [@Youchie](https://t.me/Youchie)
 
-📢 Telegram Channel: [Smartcam_1](https://t.me/smartcam_team)
+📢 Telegram Channel: [SMARTCAM TEAM](https://t.me/smartcam_team)
