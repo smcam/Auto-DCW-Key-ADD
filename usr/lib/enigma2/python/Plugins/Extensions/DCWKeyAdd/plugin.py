@@ -228,7 +228,7 @@ class DCWKeyAddPlugin(Screen):
                             direction = "W"
                         else:
                             direction = "E"
-                        return "{:.1f}°{}".format(orbital_position / 10.0, direction)
+                        return u"{:.1f}\u00B0{}".format(orbital_position / 10.0, direction)
         except:
             pass
         return "N/A"
@@ -576,7 +576,7 @@ class DCWKeyAddPlugin(Screen):
                 direction = "W"
             else:
                 direction = "E"
-            sat_pos = "{:.1f}°{}".format(orbital_position / 10.0, direction)
+            sat_pos = u"{:.1f}\u00B0{}".format(orbital_position / 10.0, direction)
 
             frequency = frontendData.get("frequency", 0)
             freq_mhz = frequency // 1000 if frequency else 0
@@ -658,7 +658,7 @@ class DCWKeyAddPlugin(Screen):
                 direction = "W"
             else:
                 direction = "E"
-            sat_pos = "{:.1f}°{}".format(orbital_position / 10.0, direction)
+            sat_pos = u"{:.1f}\u00B0{}".format(orbital_position / 10.0, direction)
 
             frequency = frontendData.get("frequency", 0)
             freq_mhz = frequency // 1000 if frequency else 0
