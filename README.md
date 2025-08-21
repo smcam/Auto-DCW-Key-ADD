@@ -11,20 +11,6 @@ Auto-DCW-Key-ADD
 
 Coded by Youchie SmartCam Tem (c)2025
 
-V1.0.6
-
-📅 Release Date: 2025-06-11
-
-Changes:
-
-→ Fixed compatibility with Python 2 and Python 3.
-
-→ Improved automatic detection of configuration folder.
-
-→ Optimized for HD and FullHD skins.
-
-→ Fixed some reported bugs.
-
 ================================================================
 
 ADD Manual BISS Key And Add Auto DCW Key Plugin for Enigma2
