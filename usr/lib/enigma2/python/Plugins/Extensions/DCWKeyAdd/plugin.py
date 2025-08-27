@@ -1,6 +1,6 @@
 #############################################################################
 #  Add Auto DCW Key And ADD Manual BISS Key Plugin for Enigma2 by @Youchie ##
-#  Version: 1.0.7                                                          ##
+#  Version: 1.0.8                                                          ##
 #  Coded by @Youchie SmartCam Tem (c)2025                                  ##
 #  Telegram ID: @Youchie                                                   ##
 #  Telegram Channel: https://t.me/smartcam_team                            ##
@@ -55,7 +55,7 @@ try:
 except ImportError:
     ZIP_SUPPORT = False
 
-VERSION = "1.0.7"
+VERSION = "1.0.8"
 GITHUB_REPO = "smcam/Auto-DCW-Key-ADD"
 PLUGIN_NAME = "DCWKeyAdd"
 INSTALL_PATH = "/usr/lib/enigma2/python/Plugins/Extensions/DCWKeyAdd"
@@ -295,7 +295,7 @@ class DCWKeyAddPlugin(Screen):
                             fec_str = fec_mapping.get(fec, str(fec))
                             
                             symbol_rate = frontendData.get("symbol_rate", 0)
-                            sr_kbps = "{} Ks/s".format(symbol_rate // 1000) if symbol_rate else "N/A"
+                            sr_kbps = "{} Ks/s".format(symbol_rate / 1000) if symbol_rate else "N/A"
                             
                             self["channel_name"].setText(channel_name)
                             self["channel_details"].setText(
@@ -313,15 +313,16 @@ class DCWKeyAddPlugin(Screen):
 
     def auto_check_for_updates(self):
         try:
-            if os.path.exists(VERSION_FILE):
+            if os.path.exists("/tmp/dcwkeyadd_installed_version"):
                 try:
-                    with open(VERSION_FILE, "r") as f:
-                        installed_version = f.read().strip()
-                        if installed_version == VERSION:
+                    with open("/tmp/dcwkeyadd_installed_version", "r") as f:
+                        pending_version = f.read().strip()
+                        if pending_version == VERSION:
+                            os.remove("/tmp/dcwkeyadd_installed_version")
                             return
                 except:
                     pass
-
+                
             UpdateManager.check_updates(self.session, manual_check=False)
         except Exception as e:
             self.log_message("Auto-update error: {}".format(str(e)))
@@ -332,13 +333,13 @@ class DCWKeyAddPlugin(Screen):
                 self.show_error("zipfile module not available. Please install zip support first.")
                 return
 
-            if os.path.exists(VERSION_FILE):
-                with open(VERSION_FILE, "r") as f:
-                    installed_version = f.read().strip()
-                    if installed_version == VERSION:
+            if os.path.exists("/tmp/dcwkeyadd_installed_version"):
+                with open("/tmp/dcwkeyadd_installed_version", "r") as f:
+                    pending_version = f.read().strip()
+                    if pending_version == VERSION:
                         self.session.open(
                             MessageBox,
-                            "You already have the latest version (v{})".format(VERSION),
+                            "Update already installed!\nPlease Restart Enigma2 to Complete Update.",
                             MessageBox.TYPE_INFO,
                             timeout=5
                         )
@@ -608,7 +609,7 @@ class DCWKeyAddPlugin(Screen):
 
             sid_part = "{:04X}".format(sid)
             vpid_part = "{:04X}".format(vpid)
-            biss_line = "F {}{} 00000000 {} ;# {} -({})-{}-{}-{}-{}-{} {}-Added: {} @ {} - Key Added By Auto DCW Plugin\n".format(
+            biss_line = "F {}{} 00000000 {} ;# {} -({})-{}-{}-{}-{}-{} {}-Added: {} @ {} - By Auto DCW Plugin\n".format(
                 sid_part, vpid_part, key,
                 channel_name,
                 sat_pos,
@@ -733,15 +734,19 @@ class DCWKeyAddPlugin(Screen):
             file_exists = os.path.exists(config_file)
 
             if file_exists:
-                with open(config_file, "r", encoding="utf-8", errors="ignore") as f:
-                    content = f.readlines()
-                    
-                    for line in content:
-                        if re.match(pattern, line.strip()):
-                            updated = True
-                            continue
-                        if line.strip():
-                            new_content.append(line.rstrip())
+                if PY3:
+                    with open(config_file, "r", encoding="utf-8", errors="ignore") as f:
+                        content = f.readlines()
+                else:
+                    with open(config_file, "r") as f:
+                        content = f.readlines()
+                
+                for line in content:
+                    if re.match(pattern, line.strip()):
+                        updated = True
+                        continue
+                    if line.strip():
+                        new_content.append(line.rstrip())
 
             if updated:
                 self.log_message("Updating existing mapping for CAID: {} SID: {}".format(caid, sid))
@@ -750,67 +755,20 @@ class DCWKeyAddPlugin(Screen):
 
             new_content.append(new_line)
 
-            with open(config_file, "w", encoding="utf-8") as f:
-                f.write("\n".join(new_content))
-                f.write("\n")
+            if PY3:
+                with open(config_file, "w", encoding="utf-8") as f:
+                    f.write("\n".join(new_content))
+                    f.write("\n")
+            else:
+                with open(config_file, "w") as f:
+                    f.write("\n".join(new_content))
+                    f.write("\n")
 
             return True
 
         except Exception as e:
             self.log_message("[ERROR] write_dvbapi: {}".format(str(e)))
             return False
-
-    def auto_add(self):
-        self["label"].setText("Checking channel encryption...")
-        self.log_message("Checking channel encryption...")
-        self.update_channel_info()
-        
-        try:
-            service = self.session.nav.getCurrentService()
-            if service is None:
-                self.show_error("No active service!\nPlease tune to a channel first.")
-                return
-
-            info = service.info()
-            if info is None:
-                self.show_error("Could not get service info")
-                return
-
-            caids = info.getInfoObject(iServiceInformation.sCAIDs)
-            if not caids:
-                caid_val = info.getInfo(iServiceInformation.sCAID)
-                if caid_val in [None, -1]:
-                    caid_val = 0
-                else:
-                    caids = [caid_val]
-
-            if not caids:
-                self.show_error("No CAID found for this channel")
-                return
-
-            sid_val = info.getInfo(iServiceInformation.sSID)
-            if sid_val in [None, -1]:
-                self.show_error("Could not get SID")
-                return
-
-            caid_val = caids[0] if isinstance(caids, list) else caids
-            caid_hex = "{:04X}".format(caid_val) if caid_val != 0 else "0000"
-            sid_hex = "{:04X}".format(sid_val)
-
-            self["label"].setText("Found encrypted channel\nCAID: {}\nSID: {}".format(caid_hex, sid_hex))
-            self.log_message("Found encrypted channel\nCAID: {}\nSID: {}".format(caid_hex, sid_hex))
-
-            if self.write_dvbapi(caid_hex, sid_hex):
-                if self.restart_emulator():
-                    self.show_message("Key added successfully!\nCAID: {}\nSID: {}".format(caid_hex, sid_hex))
-                else:
-                    self.show_warning("Key added but emulator not restarted")
-            else:
-                self.show_error("Failed to write to dvbapi file")
-
-        except Exception as e:
-            self.show_error("Error in auto_add: {}".format(str(e)))
-            self.log_message("Error in auto_add: {}".format(str(e)))
 
     def write_softcam(self, line):
         emu_info = self.get_emulator_info()
@@ -828,16 +786,21 @@ class DCWKeyAddPlugin(Screen):
             needs_newline = False
 
             if os.path.exists(path):
-                with open(path, "r", encoding="utf-8", errors="ignore") as f:
-                    content = f.readlines()
-                    needs_newline = not content[-1].endswith('\n') if content else False
+                if PY3:
+                    with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                        content = f.readlines()
+                else:
+                    with open(path, "r") as f:
+                        content = f.readlines()
+                        
+                needs_newline = not content[-1].endswith('\n') if content else False
 
-                    for l in content:
-                        if l.strip().startswith("F") and sid_vpid in l:
-                            updated = True
-                            continue
-                        if l.strip():
-                            new_content.append(l.rstrip() + "\n")
+                for l in content:
+                    if l.strip().startswith("F") and sid_vpid in l:
+                        updated = True
+                        continue
+                    if l.strip():
+                        new_content.append(l.rstrip() + "\n")
 
             if updated:
                 self.log_message("Updating existing key for SID/VPID: {}".format(sid_vpid))
@@ -848,8 +811,12 @@ class DCWKeyAddPlugin(Screen):
                 new_content.append("\n")
             new_content.append(line.rstrip() + "\n")
 
-            with open(path, "w", encoding="utf-8") as f:
-                f.writelines(new_content)
+            if PY3:
+                with open(path, "w", encoding="utf-8") as f:
+                    f.writelines(new_content)
+            else:
+                with open(path, "w") as f:
+                    f.writelines(new_content)
 
             return True
 
